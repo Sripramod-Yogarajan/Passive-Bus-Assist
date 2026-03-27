@@ -1,0 +1,10 @@
+ultralytics
+easyocr
+opencv-python
+torch
+torchvision
+numpy
+matplotlib
+pillow
+scipy
+pandas

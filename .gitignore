@@ -1,0 +1,86 @@
+# ==============================
+# Python / Virtual Environment
+# ==============================
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# ==============================
+# VS Code / IDE
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# OS Files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Logs
+# ==============================
+*.log
+bus_announcements.log
+
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.*
+
+# ==============================
+# Ultralytics / YOLO Outputs
+# ==============================
+runs/
+wandb/
+
+# ==============================
+# Data (ignore all datasets & media)
+# ==============================
+data/
+
+# ==============================
+# Models / Weights
+# ==============================
+models/*.pt
+models/*.pth
+models/*.onnx
+*.pt
+
+# ==============================
+# Media Files (videos, audio, images)
+# ==============================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+*.jpg
+*.jpeg
+*.png
+
+# ==============================
+# Temporary / Cache Files
+# ==============================
+*.tmp
+*.cache
+*.bak
+
+# ==============================
+# Notebooks
+# ==============================
+.ipynb_checkpoints/
+
+# ==============================
+# Custom (Project-specific files)
+# ==============================
+main_person_gate.py
