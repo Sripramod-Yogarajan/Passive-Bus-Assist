@@ -1,255 +1,213 @@
-# Smart Bus Vision
+# 🚌 PassiveBusAssist — Low-Latency Passive Vision-Based Assistive Infrastructure for Accessible Public Transportation
 
-A Low-Latency Passive Vision-Based Assistive Infrastructure for Accessible Public Transportation
-
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![YOLO](https://img.shields.io/badge/YOLO-v8-orange.svg)](https://github.com/ultralytics/ultralytics)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-## 📋 Overview
-
-**Smart Bus Vision** is an intelligent, infrastructure-side assistive system designed for deployment at bus stops. It automatically detects arriving buses, identifies their route numbers and destinations using computer vision and OCR, and announces the information through real-time audio output. The system is designed to improve accessibility for visually impaired and elderly passengers without requiring smartphones, apps, or any user interaction.
-
-### Key Features
-
-- **🚌 Real-Time Bus Detection**: Uses YOLOv8 for accurate bus detection and tracking
-- **🎯 ROI Extraction**: Precisely localizes front display panels to isolate route and destination information
-- **📝 OCR Text Recognition**: Leverages EasyOCR for robust text extraction from LED displays
-- **⏱️ Temporal Consistency**: Verifies text across multiple frames to reduce transient errors
-- **✅ Text Validation**: Corrects OCR errors using Levenshtein distance matching against known routes
-- **🔊 Audio Announcements**: Converts recognized text to speech using Text-to-Speech (TTS)
-- **📊 Queue Management**: Prevents overlapping announcements when multiple buses arrive simultaneously
-- **📝 Logging System**: Records all announcements with timestamps for monitoring and analysis
-
-## 🎯 Problem Statement
-
-Public bus transportation systems primarily convey route numbers and destination information through visual displays mounted on the front of buses. While this approach works for sighted passengers, it creates significant accessibility barriers for:
-
-- Visually impaired individuals
-- Elderly passengers with reduced visual acuity
-- People with limited vision in challenging conditions (poor lighting, fast-moving vehicles, adverse weather)
-
-Traditional solutions often require:
-- Personal smart devices (smartphones, wearables)
-- Active user interaction
-- Stable internet connectivity
-- Technical familiarity
-
-**Smart Bus Vision** eliminates these dependencies by providing a passive, infrastructure-side solution that operates autonomously.
-
-## 🏗️ System Architecture
-
-The system follows a modular pipeline architecture:
-
-```
-Video Input → Bus Detection → ROI Extraction → Text Recognition → 
-Temporal Verification → Text Validation → Queue Management → Audio Announcement
-```
-
-### Core Modules
-
-1. **Video Input Module**: Acquires and preprocesses video frames from a fixed camera
-2. **Bus Detection Module**: Uses YOLOv8 to detect and track buses in real-time
-3. **Display Region Localization (ROI Extraction)**: Isolates front display panels containing route and destination information
-4. **Text Extraction Module**: Applies EasyOCR with LED-specific preprocessing for text recognition
-5. **Temporal Consistency Verification**: Validates text across multiple frames to ensure stability
-6. **Text Validation and Correction**: Matches OCR output against known destinations using fuzzy string matching
-7. **Queue Management Module**: Manages announcement order to prevent overlapping audio output
-8. **Audio Announcement Module**: Converts validated text to speech using pyttsx3
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-- CUDA-enabled GPU (optional, recommended for faster inference)
-- Webcam or video file for testing
-
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/Smart-Bus-Vision.git
-cd Smart-Bus-Vision
-```
-
-### Step 2: Create Virtual Environment
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### Step 3: Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### Step 4: Download Model Weights
-
-Place your trained YOLOv8 model weights (`best.pt`) in the `models/` directory.
-
-### Step 5: Configure Routes
-
-Add valid bus destinations to `data/routes.txt` (one per line).
-
-## 📖 Usage
-
-### Running the Main Pipeline
-
-The main system processes video streams and generates audio announcements:
-
-```bash
-cd scripts
-python main.py
-```
-
-**Configuration** (in `scripts/main.py`):
-- `MODEL_PATH`: Path to YOLOv8 model weights
-- `VIDEO_SOURCE`: Video file path or camera index (0 for webcam)
-- `CONF_THRESH`: Detection confidence threshold (default: 0.4)
-- `TEMPORAL_WINDOW`: Number of frames for temporal verification (default: 7)
-- `STABLE_THRESHOLD`: Minimum consistent detections for announcement (default: 4)
-
-### Image Processing Pipeline
-
-For processing single images:
-
-```bash
-cd scripts
-python image_pipeline.py
-```
-
-### OCR Testing
-
-Test OCR on individual images:
-
-```bash
-cd scripts
-python ocr_pipeline.py
-```
-
-## 📁 Project Structure
-
-```
-Smart-Bus-Vision/
-├── data/
-│   ├── data.yaml          # YOLO dataset configuration
-│   ├── routes.txt          # Valid bus destinations list
-│   ├── train/              # Training images
-│   ├── val/                # Validation images
-│   └── videos/             # Test videos
-├── models/
-│   └── best.pt             # Trained YOLOv8 model weights
-├── scripts/
-│   ├── main.py             # Main video processing pipeline
-│   ├── image_pipeline.py   # Single image processing
-│   ├── detect_and_crop.py  # Bus detection and ROI extraction
-│   └── ocr_pipeline.py      # OCR text extraction
-├── notebooks/
-│   └── smart_bus_vision.ipynb  # Jupyter notebook for experimentation
-├── requirements.txt        # Python dependencies
-├── bus_announcements.log   # Announcement logs
-└── README.md              # This file
-```
-
-## 🔧 Technical Details
-
-### Bus Detection
-
-- **Model**: YOLOv8 (You Only Look Once version 8)
-- **Classes Detected**: 
-  - `bus_front`: Front view of buses
-  - `route_number`: Route number display region
-  - `destination`: Destination display region
-- **Tracking**: Uses YOLO's built-in tracking for multi-bus scenarios
-
-### Text Recognition
-
-- **OCR Engine**: EasyOCR with English language support
-- **Preprocessing**:
-  - Grayscale conversion
-  - CLAHE (Contrast Limited Adaptive Histogram Equalization)
-  - Morphological operations
-  - 2x upscaling for better recognition
-- **Confidence Threshold**: 0.3 (configurable)
-
-### Temporal Verification
-
-- Maintains a sliding window of recent OCR results
-- Uses majority voting to determine stable text
-- Requires consistent detection across multiple frames before announcement
-
-### Text Correction
-
-- Uses RapidFuzz library for fuzzy string matching
-- Levenshtein distance-based similarity scoring
-- Matches against predefined list of valid destinations
-- Threshold: 80% similarity (configurable)
-
-### Audio Announcement
-
-- **TTS Engine**: pyttsx3 (offline, no internet required)
-- **Format**: "Attention please. Bus number {route} to {destination} has arrived."
-- **Queue System**: FIFO queue prevents overlapping announcements
-- **Logging**: All announcements logged with timestamps
-
-## 📊 Performance Metrics
-
-The system is evaluated based on:
-
-- **Bus Detection Accuracy**: Precision and recall of bus detection
-- **OCR Reliability**: Text recognition accuracy on display panels
-- **End-to-End Latency**: Time from bus detection to audio announcement
-- **False Announcement Reduction**: Effectiveness of temporal verification and validation
-
-## 🔬 Experimental Evaluation
-
-The system has been tested on:
-- Publicly available bus image datasets
-- Real-world bus stop scenarios
-- Various lighting conditions (daylight, low-light, glare)
-- Different bus display formats and fonts
-
-## 🌟 Key Advantages
-
-1. **Passive Operation**: No user interaction required
-2. **No Device Dependency**: Works without smartphones or wearables
-3. **Offline Capable**: No internet connectivity needed
-4. **Context-Aware**: Can be extended with passenger presence detection
-5. **Low Latency**: Real-time processing suitable for bus stop deployment
-6. **Robust**: Handles motion blur, lighting variations, and display inconsistencies
-7. **Scalable**: Infrastructure-side deployment benefits all passengers
-
-## 🔮 Future Enhancements
-
-- [ ] Passenger presence detection for context-aware announcements
-- [ ] Multi-language support for destinations
-- [ ] Integration with bus tracking APIs for enhanced accuracy
-- [ ] Web dashboard for monitoring and analytics
-- [ ] Edge device optimization for deployment
-- [ ] Support for multiple camera angles
-
-## 📝 License
-
-This project is developed as part of academic coursework. Please refer to the project report for detailed methodology and references.
-
-## 📚 References
-
-1. Shafique, S. (2025). Enhancing Mobility for the Blind: An AI-Powered Bus Route Recognition System
-2. Maina, H. J., & Sánchez, J. A. (2020). Stop the Bus: Computer vision for automatic recognition of urban bus lines
-3. Wang, A., et al. (2024). YOLOv10: Real-Time End-to-End Object Detection. NeurIPS 2024
-4. Wongta, P., et al. An automatic bus route number recognition
-5. Jeeva, C. (2022). Intelligent Image Text Reader using Easy OCR, NRCLex & NLTK
-
-## 🤝 Contributing
-
-This is an academic project. For questions or suggestions, please contact us.
-
-## 📧 Contact
-
-For inquiries about this project, please reach out to the team members.
+> A fully passive, infrastructure-side assistive system that enables visually impaired and mobility-limited passengers to independently identify approaching buses — no personal device required.
 
 ---
 
-**Note**: This system is designed as a proof-of-concept for infrastructure-side assistive technology in public transportation. Deployment in real-world scenarios would require additional testing, optimization, and compliance with local regulations.
+## 📌 Overview
+
+Urban bus networks communicate route and destination information almost exclusively through front-mounted visual display panels. This creates a significant accessibility barrier for the estimated **253 million people** worldwide living with moderate-to-severe visual impairment.
+
+**PassiveBusAssist** is a continuous video-based announcement pipeline deployed directly at the bus stop. Unlike existing static-image or user-centric approaches, this system:
+
+- Requires **no user device**, no active participation, and no internet connectivity
+- Operates **persistently in real time** using a single fixed surveillance-grade camera
+- Makes announcements **only when a passenger is present** and a bus is confirmed — eliminating noise pollution
+
+---
+
+## 🏗️ System Architecture
+
+```
+Fixed Camera
+     │
+     ▼
+┌─────────────────────────────────────────────────────────┐
+│              CONTINUOUS VIDEO PIPELINE (1 fps)          │
+│                                                         │
+│  ┌──────────────┐    ┌──────────────┐    ┌───────────┐ │
+│  │  YOLOv8-m    │───▶│  ByteTrack   │───▶│    ROI    │ │
+│  │  Detection   │    │  (bus_id)    │    │ Extraction│ │
+│  └──────────────┘    └──────────────┘    └─────┬─────┘ │
+│                                                 │       │
+│  ┌──────────────┐    ┌──────────────┐    ┌─────▼─────┐ │
+│  │   Context-   │◀───│   Sliding    │◀───│  EasyOCR  │ │
+│  │  Aware Gate  │    │  Window Vote │    │  + Lev.   │ │
+│  └──────┬───────┘    └──────────────┘    └───────────┘ │
+│         │                                               │
+│  ┌──────▼───────┐    ┌──────────────┐                  │
+│  │ FIFO Announce│───▶│   TTS Audio  │                  │
+│  │    Queue     │    │ Announcement │                  │
+│  └──────────────┘    └──────────────┘                  │
+└─────────────────────────────────────────────────────────┘
+         │
+         ▼
+  Monocular Distance
+     Estimation
+```
+
+---
+
+## ✨ Key Innovations
+
+### 1. Video Pipeline with Identity Tracking
+The first deployment of a **continuous video pipeline** for transit accessibility. YOLOv8-m with integrated **ByteTrack** assigns a persistent `bus_id` to each detected bus across frames, enabling:
+- Multi-bus management at a single stop
+- Per-bus sliding windows and state tracking
+- Duplicate announcement elimination
+
+### 2. Lexicon-Guided Temporal Stabilisation
+A two-stage pipeline that dramatically reduces announcement latency:
+
+| Stage | Mechanism | Effect |
+|-------|-----------|--------|
+| Stage 1 | Levenshtein correction (τ = 0.5) against route lexicon | Maps OCR errors to canonical labels (e.g., `Scrtaford → Stratford`) |
+| Stage 2 | Sliding-window majority voting (k = 7 frames) | Declares stable route label for announcement |
+
+**Result: 40.7% reduction in announcement decision latency** (30.0 → 17.8 frames)
+
+### 3. Context-Aware Announcement Gate
+```
+G = (c_bus ≥ δ) ∧ (r* ≠ ∅) ∧ (p = 1)
+```
+Announcements are triggered **only when all three conditions are simultaneously satisfied**:
+- ✅ Bus detection confidence ≥ threshold
+- ✅ Stable route label confirmed
+- ✅ Passenger present at the stop
+
+### 4. Monocular Distance Estimation
+Real-time bus distance using a single fixed camera — no stereo rig, no LiDAR:
+```
+D = (W_known × f) / W_pixel
+```
+Provides spatial awareness of approaching buses unavailable in any prior assistive transit system.
+
+---
+
+## 📊 Performance Results
+
+### Detection Performance
+
+| Condition | Precision | Recall | mAP50 |
+|-----------|-----------|--------|-------|
+| Daytime | 0.9517 | 0.9747 | 0.9759 |
+| Night-time | 0.9412 | 0.9634 | 0.9621 |
+| High LED Glare | 0.9283 | 0.9501 | 0.9498 |
+| **Overall** | **0.9517** | **0.9747** | **0.9759** |
+
+### OCR & Stabilisation Performance
+
+| Condition | OCR w/o Lev. | OCR w/ Lev. | Stab. Frames (raw) | Stab. Frames (corrected) | Latency Reduction |
+|-----------|-------------|------------|-------------------|------------------------|-------------------|
+| Day | 83.40% | 94.20% | 30 | 17 | 43.3% |
+| Night | 76.50% | 91.60% | 32 | 18 | 43.8% |
+| High LED Glare | 72.80% | 89.10% | 35 | 19 | 45.7% |
+| **Overall** | **80.35%** | **92.00%** | **30.0** | **17.8** | **40.7%** |
+
+### System-Level Summary
+
+| Metric | Value |
+|--------|-------|
+| Detection mAP50 | 0.9759 |
+| OCR Accuracy (raw) | 80.35% |
+| OCR Accuracy (Levenshtein-corrected) | ~92% |
+| Announcement Latency Reduction | 40.7% |
+| False Announcement Rate | 16.67% |
+| Estimated Bus Distance Range | 5.53 – 7.48 m |
+| Peak CPU RAM | 1,289.5 MB |
+| Peak GPU VRAM | 255.1 MB |
+
+---
+
+## 🖼️ Sample Scenarios
+
+### Daytime Detection
+Route OCR accuracy: **99.44%** | Destination accuracy after correction: **100%** (+25%) | Estimated distance: **7.48 m**
+
+### Night-time Detection
+Route OCR remains high (96–97%) due to short alphanumeric strings. Destination strings benefit substantially from Levenshtein correction (up to +11.83%). Distance estimates remain physically plausible.
+
+### High LED Glare
+Most challenging condition. Route OCR drops to **75.44%**, but Levenshtein correction recovers destination accuracy to **91.80%** (+7.90%). The stabilisation window achieves its **largest latency reduction (45.7%)** under this condition.
+
+---
+
+## 🛠️ Technical Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Object Detection | YOLOv8-m (Ultralytics) |
+| Multi-Object Tracking | ByteTrack (integrated in YOLOv8) |
+| OCR Engine | EasyOCR (CNN + RNN + Attention) |
+| String Correction | RapidFuzz (Levenshtein similarity) |
+| Video Acquisition | OpenCV |
+| Annotation Tool | CVAT |
+| Target Edge Platform | NVIDIA Jetson AGX Orin |
+
+---
+
+## 📋 Dataset
+
+A custom dataset was constructed from publicly available footage covering three condition categories:
+
+- **Daytime** — normal ambient light
+- **Night-time** — artificial and low illumination
+- **High LED Glare** — oversaturated display panels
+
+| Split | Images |
+|-------|--------|
+| Train | 400 |
+| Validation | 200 |
+| Test | 200 |
+| **Total** | **800** |
+
+Three annotated object classes: `bus_front`, `route_number`, `destination`
+
+---
+
+## 🏋️ Training Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| Epochs | 70 |
+| Early stopping patience | 30 |
+| Input resolution | 960 × 960 |
+| Batch size | 8 |
+| Validation metric | mAP50 |
+| Pretrained weights | Enabled |
+| Mosaic augmentation | Disabled (last 10 epochs) |
+
+---
+
+## ⚡ Edge Deployability
+
+| Platform | RAM | CPU Headroom | GPU Headroom |
+|----------|-----|-------------|-------------|
+| Jetson Nano (4GB) | 4 GB | ~2.7 GB | ~3.7 GB |
+| Jetson Orin NX (8GB) | 8 GB | ~6.7 GB | ~7.7 GB |
+| Jetson AGX Orin (32GB) | 32 GB | ~30.7 GB | ~31.7 GB |
+| **This system** | **1.29 GB** | — | — |
+
+GPU VRAM remains stable at ~255 MB across inference — dominated by YOLOv8-m weights (~6.4 MB) and EasyOCR's CRNN model (~20 MB).
+
+### Optimisation Opportunities
+- **TensorRT INT8 quantisation** — reduces model size from ~6.4 MB to ~1.5 MB; inference latency from ~5 ms to ~3 ms
+- **Lightweight CRNN** — replace EasyOCR with a domain-fine-tuned model targeting ~5 MB
+- **Adaptive sampling** — increase from 1 fps to 3–5 fps during confirmed bus-approach events
+
+---
+
+## 🚀 Future Enhancements
+
+- **Live RTSP stream deployment** with stream-recovery mechanisms and adaptive temporal stabilisation
+- **TensorRT quantisation & model pruning** for higher effective inference rates
+- **Multilingual TTS output** to serve linguistically diverse urban populations
+- **Transformer-based OCR** for scrolling LED displays, multi-line panels, and non-Latin scripts
+- **Adaptive majority-vote window** — dynamically tuned by OCR confidence, detection stability, or bus distance
+- **Distance-triggered early alerts** and multi-camera centralised monitoring for large-scale deployment
+
+---
+
+
+
+*This system advances assistive transit technology from reactive, user-initiated recognition toward **proactive, infrastructure-integrated accessibility**.*
